@@ -1,0 +1,51 @@
+DROP DATABASE IF exists DatabaseProject;
+Create database DatabaseProject;
+
+use DatabaseProject;
+
+Drop table if exists workitem;
+Drop table if exists User;
+Drop table if exists Team;
+Drop table if exists Issue;
+
+CREATE TABLE User (
+id VARCHAR(200) NOT NULL,
+firstname VARCHAR(200) NOT NULL,
+lastname VARCHAR(200) NOT NULL,
+username  VARCHAR(200) NOT NULL unique,
+userstatus VARCHAR(200) NOT NULL,
+teamid  VARCHAR(200),
+primary key (id)
+);
+
+CREATE TABLE Team (
+id VARCHAR(200) NOT NULL,
+teamname  VARCHAR(200) NOT NULL unique,
+teamstatus VARCHAR(200) NOT NULL,
+primary key (id)
+);
+
+CREATE TABLE WorkItem (
+id VARCHAR(200) NOT NULL,
+title  VARCHAR(200) NOT NULL,
+itemstatus VARCHAR(200) NOT NULL,
+userid VARCHAR(200) ,
+issueid VARCHAR(200),
+primary key (id)
+);
+
+
+CREATE TABLE Issue (
+id VARCHAR(200) NOT NULL,
+description  VARCHAR(200) NOT NULL,
+primary key (id)
+);
+
+ALTER table User
+ADD foreign key (teamid) references Team(id);
+
+ALTER table WorkItem
+ADD foreign key (userid) references User(id);
+
+ALTER table WorkItem
+ADD foreign key (issueid) references Issue(id);
