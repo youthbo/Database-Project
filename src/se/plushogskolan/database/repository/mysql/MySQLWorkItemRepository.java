@@ -8,7 +8,6 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-//ta bort, ändra status, create
 public class MySQLWorkItemRepository implements WorkItemRepository {
 
 	final String devDb = "jdbc:mysql://localhost:3306/DatabaseProject?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC";
@@ -20,7 +19,7 @@ public class MySQLWorkItemRepository implements WorkItemRepository {
 	private static final String UPDATE_STATUS = "UPDATE WorkItem SET itemstatus=? WHERE id=?";
 	// private static final String DELETE = "DELETE FROM WorkItem WHERE id=?";
 	private static final String DELETE = "UPDATE WorkItem SET itemstatus='Deleted',userid=null WHERE id=?";
-
+    private static final String UPDATE_USERID_TO_NULL ="UPDATE workitem Set userid = null where id=?";
 	private final static String UPDATE_USER = "UPDATE WorkItem set UserId = ? WHERE id = ?";
 	private final static String RETURN_ALL_BY_STATUS = "SELECT * FROM WorkItem WHERE itemstatus = ?";
 	private final static String RETURN_ALL_BY_TEAM = "SELECT Team.id as TeamId, User.id as UserId, \n"
@@ -104,7 +103,7 @@ public class MySQLWorkItemRepository implements WorkItemRepository {
 		try (Connection connection = DriverManager.getConnection(devDb, username, password)) {
 			connection.setAutoCommit(false);
 			try (PreparedStatement create = connection.prepareStatement(CREATE)) {
-				;
+				
 				create.setString(1, item.getId());
 				create.setString(2, item.getTitle());
 				create.setString(3, item.getStatus());
@@ -169,5 +168,21 @@ public class MySQLWorkItemRepository implements WorkItemRepository {
 			throw new RuntimeException("Could not get work item" + " " + e.toString());
 		}
 		return result;
+	}
+	
+	public void removeUserId(String itemId){
+		try(Connection connection = DriverManager.getConnection(devDb,username,password)){		
+			connection.setAutoCommit(false);
+			try (PreparedStatement statement= connection.prepareStatement(UPDATE_USERID_TO_NULL)) {
+				statement.setString(1, itemId);
+				statement.executeUpdate();
+				connection.commit();
+			} catch (SQLException e) {
+				connection.rollback();
+				throw new RuntimeException("Could not set userid to null" + " " + e.toString());
+			}
+		} catch (SQLException e1) {
+			e1.printStackTrace();
+		}
 	}
 }

@@ -6,7 +6,6 @@ import se.plushogskolan.database.model.User;
 import se.plushogskolan.database.model.WorkItem;
 import se.plushogskolan.database.model.WorkItemStatus;
 import se.plushogskolan.database.repository.RepositoryException;
-import se.plushogskolan.database.repository.ServiceException;
 import se.plushogskolan.database.repository.UserRepository;
 import se.plushogskolan.database.repository.WorkItemRepository;
 import se.plushogskolan.database.repository.mysql.MySQLWorkItemRepository;
@@ -14,17 +13,24 @@ import se.plushogskolan.database.repository.mysql.MySQLWorkItemRepository;
 public class UserService {
 
 	UserRepository userRepository;
+	WorkItemRepository workItemRepository;
 
-	public UserService(UserRepository userRepository) {
+	public UserService(UserRepository userRepository,WorkItemRepository workItemRepository) {
 		this.userRepository = userRepository;
+		this.workItemRepository = workItemRepository;
 	}
 
 	public void addUser(User user) throws ServiceException {
-
-		try {
-			if (user.getUsername().length() >= 10)
-				userRepository.addUser(user);
-			else
+		try {	
+			if (user.getUsername().length() >= 10) {
+				List<User> users = userRepository.getAllUsersInTeam(user.getTeamid());
+				if (users.size() < 10) {
+					userRepository.addUser(user);
+				} else {
+					throw new ServiceException(
+							"This team already has 10 users! (But it is allowed to have MAX 10 users in one team)");
+				}
+			} else
 				throw new ServiceException("Username must be at least 10 characters long!");
 		} catch (RepositoryException e) {
 			throw new ServiceException("Could not add user to database", e);
@@ -57,14 +63,14 @@ public class UserService {
 
 	public void deactivateUser(String username) throws ServiceException {
 		try {
-			WorkItemRepository wir = new MySQLWorkItemRepository();
-			WorkItemService workItemService = new WorkItemService(wir);
+			//WorkItemRepository wir = new MySQLWorkItemRepository();
+			//WorkItemService workItemService = new WorkItemService(wir);
 			userRepository.deactivateUser(username);
 			String userId = userRepository.getUserByUsername(username).getId();
-			List<WorkItem> itemList = workItemService.getAllByUser(userId);
+			List<WorkItem> itemList = workItemRepository.getAllByUser(userId);
 			for (WorkItem wi : itemList) {
-				workItemService.changeStatus(wi.getId(), WorkItemStatus.Unstarted);
-				workItemService.assignItemToUser(wi.getId(), null);
+				workItemRepository.changeStatus(wi.getId(), WorkItemStatus.Unstarted.toString());
+				workItemRepository.removeUserId(wi.getId());
 			}
 
 		} catch (Exception e) {
@@ -74,8 +80,12 @@ public class UserService {
 
 	public void updateUser(User user, String oldUsername) throws ServiceException {
 		try {
-			userRepository.updateUser(user, oldUsername);
-		} catch (Exception e) {
+			if (userRepository.getUserByUsername(oldUsername)!=null){
+			   userRepository.updateUser(user, oldUsername);
+			}else{
+				throw new ServiceException("user:"+oldUsername+" doesn't exist.");
+			}
+		} catch (RepositoryException e) {
 			throw new ServiceException("Couldn't update user \"" + user.getUsername() + "\" to the database", e);
 		}
 	};

@@ -20,4 +20,6 @@ public interface WorkItemRepository {
 	List<WorkItem> getAllByUser(String userId);
 
 	WorkItem getById(String id);
+	
+	void removeUserId(String itemId);
 }

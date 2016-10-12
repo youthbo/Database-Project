@@ -1,6 +1,6 @@
 package se.plushogskolan.database.repository;
 
-public class RepositoryException extends Exception {
+public final class RepositoryException extends Exception {
 
 	private static final long serialVersionUID = -4873403939274419488L;
 

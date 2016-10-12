@@ -32,7 +32,7 @@ public class Main {
 		WorkItemRepository workItemRepository = new MySQLWorkItemRepository();
 
 
-		UserService us = new UserService(userRepository);
+		UserService us = new UserService(userRepository,workItemRepository);
 		// for (int i=0;i<15;i++){
 		// User user=new User("fn"+i, "ln"+i, "usernameTest"+i, null);
 		// us.addUser(user);
@@ -50,8 +50,9 @@ public class Main {
 		// Issue issue=new Issue("Test issue "+i);
 		// is.createIssue(issue);
 		// }
+		is.createIssue(new Issue("Test issue 1"));
 
-		WorkItemService wis = new WorkItemService(workItemRepository);
+		WorkItemService wis = new WorkItemService(workItemRepository,userRepository);
 		// for (int i=0;i<6;i++){
 		// WorkItem wi=new WorkItem("Work item "+i,null);
 		// wis.addWorkItem(wi);
@@ -111,7 +112,7 @@ public class Main {
 		// Test issue functions
 		// is.updateIssue(is.getIssueByName("Test issue 2"), "Changed issue
 		// name");
-		 System.out.println(is.getAllItemsWithIssue().size());
+		//System.out.println(is.getAllItemsWithIssue().size());
 
 		// Test issue business logic
 		// wis.changeStatus("0bf34c6e-93ba-4d8d-a98a-bbe16b958326",

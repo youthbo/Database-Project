@@ -5,63 +5,78 @@ import java.util.List;
 import se.plushogskolan.database.model.User;
 import se.plushogskolan.database.model.WorkItem;
 import se.plushogskolan.database.model.WorkItemStatus;
-import se.plushogskolan.database.repository.ServiceException;
+import se.plushogskolan.database.repository.RepositoryException;
 import se.plushogskolan.database.repository.UserRepository;
 import se.plushogskolan.database.repository.WorkItemRepository;
 import se.plushogskolan.database.repository.mysql.MySQLUserRepository;
 
-public class WorkItemService {
+public final class WorkItemService {
 
-	WorkItemRepository wir;
+	private final WorkItemRepository workItemRepository;
+	private final UserRepository userRepository;
 
-	public WorkItemService(WorkItemRepository wir) {
-		this.wir = wir;
+	public WorkItemService(WorkItemRepository workItemRepository,UserRepository userRepository) {
+		this.workItemRepository = workItemRepository;
+		this.userRepository = userRepository;
 	}
 
 	public void addWorkItem(WorkItem workItem) {
-		wir.addWorkItem(workItem);
+		workItemRepository.addWorkItem(workItem);
 	}
 
 	public void changeStatus(String id, WorkItemStatus status) {
 
-		wir.changeStatus(id, status.toString());
+		workItemRepository.changeStatus(id, status.toString());
 	}
 
+	//better to return boolean with delete methods
 	public void delete(String id) {
-		wir.delete(id);
+		if (workItemRepository.getById(id)!=null){
+		    workItemRepository.delete(id);
+		}else{
+			throw new ServiceException("Delete work item with id:"+id+" failed. Work item doesn't exist.");
+		}
 	}
 
 	public void assignItemToUser(String itemId, String userId) {
-		UserRepository userRepository = new MySQLUserRepository();
-		UserService us = new UserService(userRepository);
-		User user = us.getUserById(userId);
+		
+		User user;
+		try {
+			user = userRepository.getUserById(userId);
+		} catch (RepositoryException e) {
+			throw new ServiceException("Get user by id:"+userId+" failed.",e);
+		}
+		
 		if ((user != null) && (user.getStatus().equals("Inactive"))) {
 			throw new ServiceException("Assign workitem to user failed, user is inactive");
-		} else if (user == null) {
-			wir.assignItemToUser(itemId, userId);
+		}else if (user==null){
 			return;
 		}
-		List<WorkItem> items = this.wir.getAllByUser(userId);
+		List<WorkItem> items = this.workItemRepository.getAllByUser(userId);
 		if (items.size() < 5) {
-			this.wir.assignItemToUser(itemId, userId);
+			this.workItemRepository.assignItemToUser(itemId, userId);
 		} else {
 			throw new ServiceException("Assign work item to user failed, user has already 5 workitems.");
 		}
 	}
 
+	public void removeUserId(String itemId){
+		workItemRepository.removeUserId(itemId);
+	}
+	
 	public List<WorkItem> getAllByStatus(WorkItemStatus status) {
-		return this.wir.getAllByStatus(status.toString());
+		return this.workItemRepository.getAllByStatus(status.toString());
 	}
 
 	public List<WorkItem> getAllByTeam(String teamId) {
-		return this.wir.getAllByTeam(teamId);
+		return this.workItemRepository.getAllByTeam(teamId);
 	}
 
 	public List<WorkItem> getAllByUser(String id) {
-		return this.wir.getAllByUser(id);
+		return this.workItemRepository.getAllByUser(id);
 	}
 
 	public WorkItem getById(String id) {
-		return this.wir.getById(id);
+		return this.workItemRepository.getById(id);
 	}
 }

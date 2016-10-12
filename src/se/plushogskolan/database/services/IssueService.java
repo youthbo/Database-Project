@@ -6,7 +6,6 @@ import se.plushogskolan.database.model.Issue;
 import se.plushogskolan.database.model.WorkItem;
 import se.plushogskolan.database.repository.IssueRepository;
 import se.plushogskolan.database.repository.RepositoryException;
-import se.plushogskolan.database.repository.ServiceException;
 import se.plushogskolan.database.repository.WorkItemRepository;
 
 public class IssueService {
@@ -49,9 +48,7 @@ public class IssueService {
 	public void updateIssue(Issue issue, String new_description) {
 		try {
 			if ((issueRepository.exists(issue)) && ((issueRepository.getIssueByName(new_description) == null))) {
-
 				issueRepository.updateIssue(issue, new_description);
-
 			} else
 				throw new ServiceException(
 						"Update issue failed. Issue doesn't exists or the same description name already exists");

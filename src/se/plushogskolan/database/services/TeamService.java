@@ -1,16 +1,10 @@
 package se.plushogskolan.database.services;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 
 import se.plushogskolan.database.model.Team;
 import se.plushogskolan.database.model.User;
 import se.plushogskolan.database.repository.RepositoryException;
-import se.plushogskolan.database.repository.ServiceException;
 import se.plushogskolan.database.repository.TeamRepository;
 import se.plushogskolan.database.repository.UserRepository;
 import se.plushogskolan.database.repository.mysql.MySQLUserRepository;
@@ -18,10 +12,20 @@ import se.plushogskolan.database.repository.mysql.MySQLUserRepository;
 public final class TeamService {
 
 	private final TeamRepository teamRepository;
+	private final UserRepository userRepository;
+
 
 	public TeamService(TeamRepository teamRepository) {
 		this.teamRepository = teamRepository;
+		userRepository = new MySQLUserRepository();
 	}
+
+	
+	public TeamService(TeamRepository teamRepository, UserRepository userRepository) {
+		this.teamRepository = teamRepository;
+		this.userRepository = userRepository;
+	}
+
 
 	public void addTeam(Team team) {
 		try {
@@ -75,8 +79,6 @@ public final class TeamService {
 					teamRepository.updateTeam(oldName, newName);
 				} else {
 					throw new ServiceException("Team with this teamname " + newName + " exists");
-
-
 				}
 			} else {
 				throw new ServiceException("Team with this teamname NOT exists");
@@ -90,20 +92,15 @@ public final class TeamService {
 
 	public void addUserToTeam(String userid, String teamid) {
 		try {
-
 			String name = teamRepository.getTeamById(teamid).getName();
-			if (teamRepository.exists(name)) {
-				final UserRepository userRepository = new MySQLUserRepository();
-
+			if (teamRepository.exists(name)) {				
 				List<User> users = userRepository.getAllUsersInTeam(teamid);
 				if (users.size() < 10) {
 					this.teamRepository.addUserToTeam(userid, teamid);
-
 				} else {
 					throw new ServiceException(
 							"This team already has 10 users! (But it is allowed to have MAX 10 users in one team)");
 				}
-
 			} else {
 				throw new ServiceException("Team with this teamId NOT exists");
 			}
