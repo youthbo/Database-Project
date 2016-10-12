@@ -1,12 +1,5 @@
 package se.plushogskolan.database.main;
 
-import java.util.List;
-
-import se.plushogskolan.database.model.Issue;
-import se.plushogskolan.database.model.Team;
-import se.plushogskolan.database.model.User;
-import se.plushogskolan.database.model.WorkItem;
-import se.plushogskolan.database.model.WorkItemStatus;
 import se.plushogskolan.database.repository.IssueRepository;
 import se.plushogskolan.database.repository.RepositoryException;
 import se.plushogskolan.database.repository.TeamRepository;
@@ -50,7 +43,6 @@ public class Main {
 		// Issue issue=new Issue("Test issue "+i);
 		// is.createIssue(issue);
 		// }
-		is.createIssue(new Issue("Test issue 1"));
 
 		WorkItemService wis = new WorkItemService(workItemRepository,userRepository);
 		// for (int i=0;i<6;i++){
@@ -62,7 +54,7 @@ public class Main {
 		// User user= new User("user","update","usernameTest00",null);
 		// us.updateUser(user, "usernameTest1");
 
-		// us.deactivateUser("usernameTest00");
+		 us.deactivateUser("AddtoTeam1");
 		// System.out.println(us.getUserById("002d74b9-5cdc-4b1f-be9b-332d5d8f38e5").getUsername());
 		// System.out.println(us.getUserByUsername("usernameTest00").getId());
 
