@@ -1,11 +1,6 @@
 package se.plushogskolan.database.repository.mysql;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,56 +11,35 @@ import se.plushogskolan.database.repository.RepositoryException;
 
 public final class MySQLIssueRepository implements IssueRepository {
 
-	private final String URL = "jdbc:mysql://localhost:3306/DatabaseProject?useSSL=false";
-	private final String DB_USER = "awesome";
-	private final String DB_PASSWORD = "database";
+	private final static Mapper<Issue> mapper = (r -> new Issue(r.getString(1), r.getString(2)));
+
+	private final static Mapper<WorkItem> itemMapper = (r -> new WorkItem(r.getString(1), r.getString(2),
+			r.getString(3), r.getString(4), r.getString(5)));
 
 	@Override
 	public void createIssueAndAssignToWorkItem(Issue issue, String itemId) throws RepositoryException {
 		String create_issue_sql = "insert into issue values(?,?)";
 		String assign_issue_sql = "update workitem set issueid=? where id=?";
 
-		try (Connection conn = DriverManager.getConnection(URL, DB_USER, DB_PASSWORD)) {
-			conn.setAutoCommit(false);
-			try (PreparedStatement insertStatement = conn.prepareStatement(create_issue_sql);
-					PreparedStatement updateStatement = conn.prepareStatement(assign_issue_sql)) {
-
-				insertStatement.setString(1, issue.getId());
-				insertStatement.setString(2, issue.getDescription());
-				updateStatement.setString(1, issue.getId());
-				updateStatement.setString(2, itemId);
-				insertStatement.executeUpdate();
-				updateStatement.executeUpdate();
-				conn.commit();
-
-			} catch (SQLException e) {
-				conn.rollback();
-				throw new RepositoryException("Can not create issue and assign to work item with id:" + itemId, e);
-			}
+		try {
+			SQL sql = new SQL(create_issue_sql);
+			sql.param(issue.getId()).param(issue.getDescription()).update();
+			sql = new SQL(assign_issue_sql);
+			sql.param(issue.getId()).param(itemId).update();
 		} catch (SQLException e) {
-
-			throw new RepositoryException("Can not connect to issue repository ", e);
+			throw new RepositoryException("Can't create issue and assign to work item", e);
 		}
+
 	}
 
 	@Override
 	public void updateIssue(Issue issue, String new_description) throws RepositoryException {
-		String sql = "update issue set description = ? where description = ?";
-		try (Connection conn = DriverManager.getConnection(URL, DB_USER, DB_PASSWORD)) {
-			conn.setAutoCommit(false);
-			try (PreparedStatement statement = conn.prepareStatement(sql)) {
-				statement.setString(1, new_description);
-				statement.setString(2, issue.getDescription());
-				statement.executeUpdate();
-				conn.commit();
-			} catch (SQLException e) {
-				conn.rollback();
-				throw new RepositoryException("Can not update issue.", e);
-			}
-
+		String update_sql = "update issue set description = ? where description = ?";
+		SQL sql = new SQL(update_sql);
+		try {
+			sql.param(new_description).param(issue.getDescription()).update();
 		} catch (SQLException e) {
-			throw new RepositoryException(
-					"Can not update description:" + issue.getDescription() + " to:" + new_description, e);
+			throw new RepositoryException("Can't Update issue.", e);
 		}
 	}
 
@@ -73,20 +47,8 @@ public final class MySQLIssueRepository implements IssueRepository {
 	public List<WorkItem> getAllItemsWithIssue() throws RepositoryException {
 		String sql = "select * from workitem where issueid is not null";
 		List<WorkItem> itemList = new ArrayList<>();
-		try (Connection conn = DriverManager.getConnection(URL, DB_USER, DB_PASSWORD);
-				Statement statement = conn.createStatement();) {
-
-			ResultSet result = statement.executeQuery(sql);
-			while (result.next()) {
-				String id = result.getString("id");
-				String title = result.getString("title");
-				String status = result.getString("itemstatus");
-				String userid = result.getString("userid");
-				String issueid = result.getString("issueid");
-				WorkItem workitem = new WorkItem(id, title, status, userid, issueid);
-				itemList.add(workitem);
-			}
-
+		try {
+			itemList = new SQL(sql).multiQuery(itemMapper);
 		} catch (SQLException e) {
 			throw new RepositoryException("Can not get all items with issue.", e);
 		}
@@ -96,13 +58,10 @@ public final class MySQLIssueRepository implements IssueRepository {
 	@Override
 	public boolean exists(Issue issue) throws RepositoryException {
 		String sql = "select * from issue where description = ?";
-		try (Connection conn = DriverManager.getConnection(URL, DB_USER, DB_PASSWORD);
-				PreparedStatement statement = conn.prepareStatement(sql)) {
-			statement.setString(1, issue.getDescription());
-			ResultSet result = statement.executeQuery();
-			return result.next();
+		try {
+			return new SQL(sql).param(issue.getDescription()).exists();
 		} catch (SQLException e) {
-			throw new RepositoryException("Can not get issue with descriprtion:" + issue.getDescription(), e);
+			throw new RepositoryException("Can't check if issue exists", e);
 		}
 
 	}
@@ -110,23 +69,11 @@ public final class MySQLIssueRepository implements IssueRepository {
 	@Override
 	public void createIssue(Issue issue) throws RepositoryException {
 		String create_issue_sql = "insert into issue values(?,?)";
-
-		try (Connection conn = DriverManager.getConnection(URL, DB_USER, DB_PASSWORD)) {
-			conn.setAutoCommit(false);
-			try (PreparedStatement insertStatement = conn.prepareStatement(create_issue_sql)) {
-
-				insertStatement.setString(1, issue.getId());
-				insertStatement.setString(2, issue.getDescription());
-				insertStatement.executeUpdate();
-				conn.commit();
-
-			} catch (SQLException e) {
-				conn.rollback();
-				throw new RepositoryException("Can not create issue with description:" + issue.getDescription(), e);
-			}
+		SQL sql = new SQL(create_issue_sql);
+		try {
+			sql.param(issue.getId()).param(issue.getDescription()).update();
 		} catch (SQLException e) {
-
-			throw new RepositoryException("Can not connect to issue repository ", e);
+			throw new RepositoryException("Can't create issue", e);
 		}
 
 	}
@@ -134,23 +81,11 @@ public final class MySQLIssueRepository implements IssueRepository {
 	@Override
 	public void assignToWorkItem(Issue issue, String itemid) throws RepositoryException {
 		String assign_issue_sql = "update workitem set issueid=? where id=?";
-
-		try (Connection conn = DriverManager.getConnection(URL, DB_USER, DB_PASSWORD)) {
-			conn.setAutoCommit(false);
-			try (PreparedStatement updateStatement = conn.prepareStatement(assign_issue_sql)) {
-
-				updateStatement.setString(1, issue.getId());
-				updateStatement.setString(2, itemid);
-				updateStatement.executeUpdate();
-				conn.commit();
-
-			} catch (SQLException e) {
-				conn.rollback();
-				throw new RepositoryException("Can not assign to work item with id:" + itemid, e);
-			}
+		SQL sql = new SQL(assign_issue_sql);
+		try {
+			sql.param(issue.getId()).param(itemid).update();
 		} catch (SQLException e) {
-
-			throw new RepositoryException("Can not connect to issue repository ", e);
+			throw new RepositoryException("Can't assign issue to work item", e);
 		}
 
 	}
@@ -158,18 +93,12 @@ public final class MySQLIssueRepository implements IssueRepository {
 	@Override
 	public Issue getIssueByName(String name) throws RepositoryException {
 		String sql = "select * from issue where description =?";
-		try (Connection conn = DriverManager.getConnection(URL, DB_USER, DB_PASSWORD);
-				PreparedStatement statement = conn.prepareStatement(sql)) {
-			statement.setString(1, name);
-			ResultSet result = statement.executeQuery();
-			if (result.next()) {
-				return new Issue(result.getString(1), result.getString(2));
-			}
-
+		Issue issue;
+		try {
+			issue = new SQL(sql).param(name).singleQuery(mapper);
 		} catch (SQLException e) {
-
-			throw new RepositoryException("Can not get issue by name:" + name, e);
+			throw new RepositoryException("Can't get issue by name", e);
 		}
-		return null;
+		return issue;
 	}
 }
