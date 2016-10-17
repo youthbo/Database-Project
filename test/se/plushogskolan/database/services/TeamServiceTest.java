@@ -38,8 +38,8 @@ public final class TeamServiceTest {
     @BeforeClass
     public static void setUp() throws RepositoryException{
     	team = new Team("1","Test team 1","Active");
- 
     }
+    
 	@Test
 	public void canAddTeamTest() throws RepositoryException {
 		when(teamRepository.exists(team.getName())).thenReturn(false);

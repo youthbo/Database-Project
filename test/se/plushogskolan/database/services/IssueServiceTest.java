@@ -98,7 +98,7 @@ public final class IssueServiceTest {
 				workItem = new WorkItem(itemId,workItem.getTitle(),status,workItem.getUserId(),workItem.getIssueId());
 				return workItem;
 			}	
-		}).when(workItemRepository).changeStatus("1", "Unstarted");
+		}).when(workItemRepository).changeStatus("1", "Unstarted") ;
 			
 		issueService.assignToWorkItem(issue, "1");
 		verify(issueRepository,times(1)).assignToWorkItem(issue, "1");
